@@ -8,9 +8,7 @@ const connection = mysql.createConnection({
 });
 
 connection.connect((err) => {
-  if (err) {
-    console.error(err.message);
-  }
+  if (err) throw err;
   console.log("Connected to MySqul");
 });
 
