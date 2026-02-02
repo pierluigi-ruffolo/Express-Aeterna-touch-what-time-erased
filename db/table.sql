@@ -1,5 +1,4 @@
--- 1. CREAZIONE TABELLE INDIPENDENTI (Senza Foreign Keys)
--- Queste devono essere create per prime.
+
 
 CREATE TABLE `diets`(
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -23,7 +22,7 @@ CREATE TABLE `eras`(
     `period_end_mya` INT NOT NULL
 );
 
--- 2. CREAZIONE TABELLE PRINCIPALI
+
 
 CREATE TABLE `products`(
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -35,7 +34,7 @@ CREATE TABLE `products`(
     `url_image` VARCHAR(255) NULL DEFAULT 'placeholder.jpg',
     `dimension` VARCHAR(255) NOT NULL,
     `era_id` BIGINT UNSIGNED NOT NULL,
-    `power_sources_id` BIGINT UNSIGNED NOT NULL, -- Rinominata per chiarezza
+    `power_source_id` BIGINT UNSIGNED NOT NULL, 
     `diet_id` BIGINT UNSIGNED NOT NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -59,14 +58,14 @@ CREATE TABLE `purchases`(
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 3. TABELLE COLLEGATE (Relazioni Many-to-Many e One-to-One)
+
 
 CREATE TABLE `purchase_product`(
     `product_id` BIGINT UNSIGNED NOT NULL,
     `purchase_id` BIGINT UNSIGNED NOT NULL,
     `quantity` INT NOT NULL,
     `unit_price` DECIMAL(8, 2) NOT NULL,
-    PRIMARY KEY (`product_id`, `purchase_id`) -- Aggiunta Primary Key composta
+    PRIMARY KEY (`product_id`, `purchase_id`) 
 );
 
 CREATE TABLE `invoices`(
@@ -83,8 +82,7 @@ CREATE TABLE `invoices`(
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. AGGIUNTA DEI VINCOLI (Foreign Keys)
--- Ora che tutte le tabelle esistono, colleghiamo i punti.
+
 
 ALTER TABLE `products` 
     ADD CONSTRAINT `products_era_id_foreign` FOREIGN KEY(`era_id`) REFERENCES `eras`(`id`),
