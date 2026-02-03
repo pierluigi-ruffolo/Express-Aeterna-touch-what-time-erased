@@ -19,22 +19,39 @@ function indexProducts(req, res, next) {
 function showProducts(req, res, next) {
   const { slug } = req.params;
 
+
   const sql = "SELECT * FROM products WHERE slug = ?";
 
-  connection.query(sql, [slug], (err, result) => {
-
-
+  connection.query(sql, [slug], (err, results) => {
     if (err) return next(err);
+    if (results.length === 0) return res.status(404).json({ message: "Robot non trovato!" });
 
-    if (result.length === 0) {
+    const product = results[0];
 
-      return res.status(404).json({
-        message: "Spiacente, robot non trovato!"
+    
+    const sqlRecommended = `
+      (SELECT *, 'stessa_dieta' AS motivo FROM products WHERE diet_id = ? AND id != ? LIMIT 1)
+      UNION
+      (SELECT *, 'stessa_era' AS motivo FROM products WHERE era_id = ? AND id != ? LIMIT 1)
+      UNION
+      (SELECT *, 'stessa_energia' AS motivo FROM products WHERE power_source_id = ? AND id != ? LIMIT 1)
+    `;
+
+    const params = [
+      product.diet_id, product.id, 
+      product.era_id, product.id, 
+      product.power_source_id, product.id
+    ];
+
+    connection.query(sqlRecommended, params, (err, recommendedResults) => {
+      if (err) return next(err);
+
+    
+      res.json({
+        ...product,
+        recommended: recommendedResults
       });
-    } else {
-      const singleProduct = result[0];
-      res.json(singleProduct);
-    }
+    });
   });
 }
 
