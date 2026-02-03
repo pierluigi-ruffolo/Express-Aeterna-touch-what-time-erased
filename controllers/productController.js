@@ -1,5 +1,5 @@
 import connection from "../db/db.js";
-
+import transporter from "../mailer.js";
 /* index */
 function indexProducts(req, res, next) {
   console.log("test");
@@ -150,7 +150,7 @@ function storeProducts(req, res, next) {
     connection.query(sqlPurchase, datiPurchase, (err, result) => {
       if (err) return next(err);
       const nuovoIdAcquisto = result.insertId;
-
+      console.log(nuovoIdAcquisto);
       const invoiceNumber = `INV-${Date.now()}`;
 
       const sqlInvoice = `
@@ -176,15 +176,26 @@ function storeProducts(req, res, next) {
 
         const datiPivotFinali = righePivot.map((riga) => {
           riga[0] = nuovoIdAcquisto;
+
           return riga;
         });
 
         const sqlPivot =
           "INSERT INTO purchase_product (purchase_id, product_id, quantity, unit_price) VALUES ?";
 
-        connection.query(sqlPivot, [datiPivotFinali], (err) => {
+        connection.query(sqlPivot, [datiPivotFinali], (err, resul) => {
           if (err) return next(err);
+          (async () => {
+            const info = await transporter.sendMail({
+              from: 'Aeterna" <aeterna8@ethereal.email>',
+              to: "bar@example.com, baz@example.com",
+              cc: process.env.MAIL,
+              subject: "Hello ✔",
+              text: "Hello world?",
+            });
 
+            console.log("Message sent:", info.messageId);
+          })();
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
