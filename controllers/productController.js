@@ -51,8 +51,46 @@ function showProducts(req, res, next) {
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
-  if (!customer || !cart || cart.length === 0 || !billing) {
-    return res.status(400).json({ message: "Dati mancanti!" });
+  if (
+    !customer ||
+    !cart ||
+    cart.length === 0 ||
+    !billing ||
+    !customer.email ||
+    !customer.shipping_name ||
+    !customer.shipping_surname ||
+    !customer.shipping_street ||
+    !customer.shipping_city ||
+    !customer.shipping_postcode ||
+    !customer.shipping_province_state ||
+    !customer.shipping_country ||
+    !customer.payment_method ||
+    !billing.name ||
+    !billing.surname ||
+    !billing.street ||
+    !billing.city ||
+    !billing.postcode ||
+    !billing.province_state ||
+    !billing.country
+  ) {
+    return res.status(400).json({
+      message:
+        "Errore di validazione: assicurati di aver compilato tutti i dati di spedizione, fatturazione e che il carrello non sia vuoto.",
+    });
+  }
+  let checked = false;
+  cart.forEach((c) => {
+    if (!c.product_id || !c.quantity || c.quantity <= 0) {
+      checked = true;
+      return;
+    }
+  });
+
+  if (checked) {
+    return res.status(400).json({
+      message:
+        "Errore nel formato del carrello: rilevati product_id mancanti o quantità non valide (minori o uguali a 0).",
+    });
   }
 
   const productIds = cart.map((item) => item.product_id);
@@ -60,7 +98,12 @@ function storeProducts(req, res, next) {
 
   connection.query(sqlPrices, [productIds], (err, productsInDb) => {
     if (err) return next(err);
-
+    if (productsInDb.length !== [...new Set(productIds)].length) {
+      return res.status(400).json({
+        message:
+          "Uno o più prodotti nel carrello non esistono nel nostro database!",
+      });
+    }
     let subtotale = 0;
     const righePivot = [];
 
