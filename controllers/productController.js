@@ -4,6 +4,7 @@ import connection from "../db/db.js"
 
 /* index */
 function indexProducts(req, res, next) {
+  console.log("test")
   console.log("ciao da index");
 };
 
