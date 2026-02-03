@@ -1,5 +1,5 @@
 import connection from "../db/db.js";
-
+import transporter from "../mailer.js";
 /* index */
 function indexProducts(req, res, next) {
   console.log("test");
@@ -47,76 +47,116 @@ function showProducts(req, res, next) {
   });
 }
 
-/* store*/
+/* store */
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
-  if (!customer || !cart || cart.length === 0 || !billing) {
-    return res.status(400).json({ message: "Dati mancanti!" });
+  // 1. Validazione Campi Obbligatori
+  if (
+    !customer ||
+    !cart ||
+    cart.length === 0 ||
+    !billing ||
+    !customer.email ||
+    !customer.shipping_name ||
+    !customer.shipping_surname ||
+    !customer.shipping_street ||
+    !customer.shipping_city ||
+    !customer.shipping_postcode ||
+    !customer.shipping_province_state ||
+    !customer.shipping_country ||
+    !customer.payment_method ||
+    !billing.name ||
+    !billing.surname ||
+    !billing.street ||
+    !billing.city ||
+    !billing.postcode ||
+    !billing.province_state ||
+    !billing.country
+  ) {
+    return res.status(400).json({
+      message:
+        "Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
+    });
   }
 
+  // 2. Controllo Formato Carrello
+  let cartError = false;
+  cart.forEach((c) => {
+    if (!c.product_id || !c.quantity || c.quantity <= 0) cartError = true;
+  });
+  if (cartError) {
+    return res
+      .status(400)
+      .json({ message: "Errore nel formato del carrello." });
+  }
+
+  // 3. Recupero Prezzi dal DB
   const productIds = cart.map((item) => item.product_id);
-  const sqlPrices = "SELECT id, price FROM products WHERE id IN (?)";
+  const sqlPrices = "SELECT id, price, name FROM products WHERE id IN (?)";
 
   connection.query(sqlPrices, [productIds], (err, productsInDb) => {
     if (err) return next(err);
+    if (productsInDb.length !== [...new Set(productIds)].length) {
+      return res
+        .status(400)
+        .json({ message: "Uno o più prodotti non esistono nel database." });
+    }
 
     let subtotale = 0;
     const righePivot = [];
+    let listaProdottiMail = "";
 
     cart.forEach((itemCarrello) => {
       const prodottoVero = productsInDb.find(
         (p) => p.id === itemCarrello.product_id,
       );
       if (prodottoVero) {
-        const costoRiga = prodottoVero.price * itemCarrello.quantity;
+        // FIX: Convertiamo esplicitamente in Numero per evitare errori con toFixed()
+        const prezzoUnitario = Number(prodottoVero.price);
+        const costoRiga = prezzoUnitario * itemCarrello.quantity;
+
         subtotale += costoRiga;
         righePivot.push([
           null,
           prodottoVero.id,
           itemCarrello.quantity,
-          prodottoVero.price,
+          prezzoUnitario,
         ]);
+
+        listaProdottiMail += `<li>${prodottoVero.name} (x${itemCarrello.quantity}) - ${prezzoUnitario.toFixed(2)}€</li>`;
       }
     });
 
     const costoSpedizione = subtotale >= 1000 ? 0 : 50;
     const totaleFinale = subtotale + costoSpedizione;
+    const donazioneOnlus = (totaleFinale * 0.2).toFixed(2);
 
-    const sqlPurchase = `
-      INSERT INTO purchases 
-      (customer_email, shipping_name, shipping_surname, shipping_street, shipping_city, shipping_postcode, shipping_province_state, shipping_country, subtotal, shipping_cost, total_amount, payment_method) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const datiPurchase = [
+    // 4. Inserimento Purchase
+    const sqlPurchase = `INSERT INTO purchases (customer_email, shipping_name, shipping_surname, shipping_street, shipping_city, shipping_postcode, shipping_province_state, shipping_country, subtotal, shipping_cost, total_amount, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const datiP = [
       customer.email,
       customer.shipping_name,
       customer.shipping_surname,
       customer.shipping_street,
       customer.shipping_city,
       customer.shipping_postcode,
-      customer.shipping_province_state || "N/A",
-      customer.shipping_country || "Italy",
+      customer.shipping_province_state,
+      customer.shipping_country,
       subtotale,
       costoSpedizione,
       totaleFinale,
       customer.payment_method,
     ];
 
-    connection.query(sqlPurchase, datiPurchase, (err, result) => {
+    connection.query(sqlPurchase, datiP, (err, result) => {
       if (err) return next(err);
       const nuovoIdAcquisto = result.insertId;
 
+      // 5. Inserimento Invoice
       const invoiceNumber = `INV-${Date.now()}`;
-
-      const sqlInvoice = `
-        INSERT INTO invoices 
-        (purchase_id, invoice_number, billing_name, billing_surname, billing_street, billing_city, billing_postcode, billing_province_state, billing_country) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      const datiInvoice = [
+      const sqlInv = `INSERT INTO invoices (purchase_id, invoice_number, billing_name, billing_surname, billing_street, billing_city, billing_postcode, billing_province_state, billing_country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      const datiI = [
         nuovoIdAcquisto,
         invoiceNumber,
         billing.name,
@@ -124,29 +164,59 @@ function storeProducts(req, res, next) {
         billing.street,
         billing.city,
         billing.postcode,
-        billing.province_state || "N/A",
-        billing.country || "Italy",
+        billing.province_state,
+        billing.country,
       ];
 
-      connection.query(sqlInvoice, datiInvoice, (err) => {
+      connection.query(sqlInv, datiI, (err) => {
         if (err) return next(err);
 
-        const datiPivotFinali = righePivot.map((riga) => {
-          riga[0] = nuovoIdAcquisto;
-          return riga;
+        // 6. Inserimento Pivot
+        const datiPivotFinali = righePivot.map((r) => {
+          r[0] = nuovoIdAcquisto;
+          return r;
         });
-
-        const sqlPivot =
+        const sqlPiv =
           "INSERT INTO purchase_product (purchase_id, product_id, quantity, unit_price) VALUES ?";
 
-        connection.query(sqlPivot, [datiPivotFinali], (err) => {
+        connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
 
+          // 7. Invio Mail (dentro la callback finale)
+          try {
+            await transporter.sendMail({
+              from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
+              to: customer.email,
+              cc: process.env.MAIL,
+              subject: `[AETERNA] Protocollo di Spedizione Attivato: #${nuovoIdAcquisto}`,
+              html: `
+                                <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+                                    <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
+                                    <p>Egr. <strong>${customer.shipping_name} ${customer.shipping_surname}</strong>,</p>
+                                    <p>Il tuo ordine <strong>#${nuovoIdAcquisto}</strong> è stato convalidato.</p>
+                                    <p><strong>Riepilogo:</strong></p>
+                                    <ul>${listaProdottiMail}</ul>
+                                    <hr>
+                                    <p>Spedizione: ${costoSpedizione.toFixed(2)}€</p>
+                                    <h3 style="color: #111;">Totale Investimento: ${totaleFinale.toFixed(2)}€</h3>
+                                    <div style="background: #f0fff4; padding: 15px; border: 1px dashed #27ae60; border-radius: 8px;">
+                                        <p style="margin:0; color: #27ae60;">🌱 <strong>Bio-Sostenibilità:</strong> ${donazioneOnlus}€ verranno devoluti per la protezione delle specie a rischio.</p>
+                                    </div>
+                                    <p style="font-size: 12px; color: #888; margin-top: 20px;">"Il futuro non è scritto, è costruito riga dopo riga."</p>
+                                </div>`,
+            });
+            console.log("Mail di conferma inviata.");
+          } catch (mailErr) {
+            console.error("Errore Mail:", mailErr.message);
+          }
+
+          // 8. Risposta Finale al Client
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
             fattura: invoiceNumber,
             totale: totaleFinale.toFixed(2),
+            donazione_onlus: donazioneOnlus,
           });
         });
       });
