@@ -1,34 +1,24 @@
-import connection from "../db/db.js"
-
-
+import connection from "../db/db.js";
 
 /* index */
 function indexProducts(req, res, next) {
-  console.log("test")
+  console.log("test");
   console.log("ciao da index");
-};
-
-
-
-
-
-
-
+}
 
 /* show */
 function showProducts(req, res, next) {
   const { slug } = req.params;
 
-
   const sql = "SELECT * FROM products WHERE slug = ?";
 
   connection.query(sql, [slug], (err, results) => {
     if (err) return next(err);
-    if (results.length === 0) return res.status(404).json({ message: "Robot non trovato!" });
+    if (results.length === 0)
+      return res.status(404).json({ message: "Robot non trovato!" });
 
     const product = results[0];
 
-    
     const sqlRecommended = `
       (SELECT *, 'stessa_dieta' AS motivo FROM products WHERE diet_id = ? AND id != ? LIMIT 1)
       UNION
@@ -38,30 +28,130 @@ function showProducts(req, res, next) {
     `;
 
     const params = [
-      product.diet_id, product.id, 
-      product.era_id, product.id, 
-      product.power_source_id, product.id
+      product.diet_id,
+      product.id,
+      product.era_id,
+      product.id,
+      product.power_source_id,
+      product.id,
     ];
 
     connection.query(sqlRecommended, params, (err, recommendedResults) => {
       if (err) return next(err);
 
-    
       res.json({
         ...product,
-        recommended: recommendedResults
+        recommended: recommendedResults,
       });
     });
   });
 }
 
+/* store*/
+function storeProducts(req, res, next) {
+  const { customer, cart, billing } = req.body;
 
+  if (!customer || !cart || cart.length === 0 || !billing) {
+    return res.status(400).json({ message: "Dati mancanti!" });
+  }
 
+  const productIds = cart.map((item) => item.product_id);
+  const sqlPrices = "SELECT id, price FROM products WHERE id IN (?)";
 
+  connection.query(sqlPrices, [productIds], (err, productsInDb) => {
+    if (err) return next(err);
 
-/* store */
-function storeProducts(req, res) {
-  res.send("ciao da store");
+    let subtotale = 0;
+    const righePivot = [];
+
+    cart.forEach((itemCarrello) => {
+      const prodottoVero = productsInDb.find(
+        (p) => p.id === itemCarrello.product_id,
+      );
+      if (prodottoVero) {
+        const costoRiga = prodottoVero.price * itemCarrello.quantity;
+        subtotale += costoRiga;
+        righePivot.push([
+          null,
+          prodottoVero.id,
+          itemCarrello.quantity,
+          prodottoVero.price,
+        ]);
+      }
+    });
+
+    const costoSpedizione = subtotale >= 1000 ? 0 : 50;
+    const totaleFinale = subtotale + costoSpedizione;
+
+    const sqlPurchase = `
+      INSERT INTO purchases 
+      (customer_email, shipping_name, shipping_surname, shipping_street, shipping_city, shipping_postcode, shipping_province_state, shipping_country, subtotal, shipping_cost, total_amount, payment_method) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const datiPurchase = [
+      customer.email,
+      customer.shipping_name,
+      customer.shipping_surname,
+      customer.shipping_street,
+      customer.shipping_city,
+      customer.shipping_postcode,
+      customer.shipping_province_state || "N/A",
+      customer.shipping_country || "Italy",
+      subtotale,
+      costoSpedizione,
+      totaleFinale,
+      customer.payment_method,
+    ];
+
+    connection.query(sqlPurchase, datiPurchase, (err, result) => {
+      if (err) return next(err);
+      const nuovoIdAcquisto = result.insertId;
+
+      const invoiceNumber = `INV-${Date.now()}`;
+
+      const sqlInvoice = `
+        INSERT INTO invoices 
+        (purchase_id, invoice_number, billing_name, billing_surname, billing_street, billing_city, billing_postcode, billing_province_state, billing_country) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const datiInvoice = [
+        nuovoIdAcquisto,
+        invoiceNumber,
+        billing.name,
+        billing.surname,
+        billing.street,
+        billing.city,
+        billing.postcode,
+        billing.province_state || "N/A",
+        billing.country || "Italy",
+      ];
+
+      connection.query(sqlInvoice, datiInvoice, (err) => {
+        if (err) return next(err);
+
+        const datiPivotFinali = righePivot.map((riga) => {
+          riga[0] = nuovoIdAcquisto;
+          return riga;
+        });
+
+        const sqlPivot =
+          "INSERT INTO purchase_product (purchase_id, product_id, quantity, unit_price) VALUES ?";
+
+        connection.query(sqlPivot, [datiPivotFinali], (err) => {
+          if (err) return next(err);
+
+          res.status(201).json({
+            success: true,
+            ordine_id: nuovoIdAcquisto,
+            fattura: invoiceNumber,
+            totale: totaleFinale.toFixed(2),
+          });
+        });
+      });
+    });
+  });
 }
 
 export { indexProducts, showProducts, storeProducts };
