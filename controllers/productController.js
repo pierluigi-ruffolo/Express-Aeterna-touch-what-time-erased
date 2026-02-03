@@ -150,7 +150,7 @@ function storeProducts(req, res, next) {
     connection.query(sqlPurchase, datiPurchase, (err, result) => {
       if (err) return next(err);
       const nuovoIdAcquisto = result.insertId;
-      console.log(nuovoIdAcquisto);
+
       const invoiceNumber = `INV-${Date.now()}`;
 
       const sqlInvoice = `
@@ -185,17 +185,47 @@ function storeProducts(req, res, next) {
 
         connection.query(sqlPivot, [datiPivotFinali], (err, resul) => {
           if (err) return next(err);
-          (async () => {
-            const info = await transporter.sendMail({
-              from: 'Aeterna" <aeterna8@ethereal.email>',
-              to: "bar@example.com, baz@example.com",
-              cc: process.env.MAIL,
-              subject: "Hello ✔",
-              text: "Hello world?",
-            });
 
-            console.log("Message sent:", info.messageId);
-          })();
+          const sqlNuovoAcquisto = `
+ SELECT 
+    p.id AS order_id, 
+    p.customer_email, 
+    p.shipping_name, 
+    p.shipping_surname, 
+    p.shipping_street, 
+    p.shipping_city, 
+    p.shipping_postcode, 
+    p.shipping_province_state, 
+    p.shipping_country,
+    p.subtotal,
+    p.shipping_cost,
+    p.total_amount,
+    pp.quantity, 
+    pp.unit_price, 
+    prod.name AS product_name 
+  FROM purchases AS p
+  INNER JOIN purchase_product AS pp ON pp.purchase_id = p.id
+  INNER JOIN products AS prod ON prod.id = pp.product_id
+  WHERE p.id = ?
+`;
+          (connection.query(
+            sqlNuovoAcquisto,
+            [nuovoIdAcquisto],
+            (error, result) => {
+              console.log(result[0].customer_email);
+            },
+          ),
+            (async () => {
+              const info = await transporter.sendMail({
+                from: 'Aeterna" <aeterna8@ethereal.email>',
+                to: ``,
+                cc: process.env.MAIL,
+                subject: "Hello ✔",
+                text: "Hello world?",
+              });
+
+              console.log("Message sent:", info.messageId);
+            })());
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
