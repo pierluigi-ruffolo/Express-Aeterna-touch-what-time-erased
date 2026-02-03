@@ -7,7 +7,7 @@ import {
 
 const router = express.Router();
 
-router.get("/eras", indexEras);
+router.get("/eras",indexEras);
 router.get("/diets", indexDiets);
 router.get("/power-sources", indexPowerSources);
 
