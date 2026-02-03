@@ -1,4 +1,4 @@
-// PRODUCTS
+-- PRODUCTS
 INSERT INTO products (id, name, slug, description, price, is_featured, url_image, dimension, era_id, power_source_id, diet_id, created_at, updated_at) VALUES
 (1, 'Aegirocassis', 'aegirocassis-robo', 'Replica idrodinamica ultra-precisa con sistema di filtraggio dell\'acqua attivo.', 1250.00, 0, 'aegirocassis.jpg', 'Medium', 1, 1, 3, NOW(), NOW()),
 (2, 'Alpaca Impenne', 'alpaca-impenne-robo', 'Modello sperimentale di camelide preistorico con sensori tattili avanzati.', 890.00, 0, 'alpaca-impenne.jpg', 'Medium', 3, 1, 2, NOW(), NOW()),
@@ -52,7 +52,7 @@ INSERT INTO products (id, name, slug, description, price, is_featured, url_image
 (50, 'Yi Qi', 'yi-qi-robo', 'Piccolo esploratore volante con ali a membrana flessibile.', 950.00, 0, 'yi-qi.jpg', 'Small', 2, 2, 1, NOW(), NOW());
 
 
-// DIETS
+-- DIETS
 INSERT INTO diets (id, name, slug, description) VALUES
 (1, 'Carnivoro', 'carnivoro', 'Modelli programmati per simulare comportamenti di caccia e predazione attiva.'),
 (2, 'Erbivoro', 'erbivoro', 'Repliche con algoritmi di pascolo e interazione pacifica con l\'ambiente.'),
@@ -61,7 +61,7 @@ INSERT INTO diets (id, name, slug, description) VALUES
 
 
 
-// POWER SOURCES
+-- // POWER SOURCES
 INSERT INTO power_sources (id, name, slug, description) VALUES
 (1, 'Batteria agli Ioni di Litio', 'lithium-battery', 'Alimentazione standard ad alta densità per robot di medie dimensioni. Autonomia stimata: 24h.'),
 (2, 'Cella Solare Integrata', 'solar-cell', 'Sistema di auto-ricarica tramite luce ambientale. Ideale per droni leggeri e piccoli modelli da esposizione.'),
@@ -69,7 +69,7 @@ INSERT INTO power_sources (id, name, slug, description) VALUES
 
 
 
-// ERAS
+-- // ERAS
 INSERT INTO `eras` (`id`, `name`, `slug`, `display_period`) VALUES
 (1, 'Paleozoico', 'paleozoico', 'Da 541 a 252 milioni di anni fa'),
 (2, 'Mesozoico', 'mesozoico', 'Da 252 a 66 milioni di anni fa'),
