@@ -104,6 +104,8 @@ function showProducts(req, res, next) {
 
     const product = results[0];
 
+
+    //correlati
     const sqlRecommended = `
       (SELECT *, 'stessa_dieta' AS motivo FROM products WHERE diet_id = ? AND id != ? LIMIT 1)
       UNION
