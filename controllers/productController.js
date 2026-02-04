@@ -2,8 +2,6 @@ import connection from "../db/db.js";
 import transporter from "../mailer.js";
 /* index */
 function indexProducts(req, res, next) {
-  console.log("test");
-
   let query = `
    SELECT products.*, diets.slug AS diet, eras.slug AS era, power_sources.slug AS power_source
   FROM products
@@ -13,7 +11,7 @@ function indexProducts(req, res, next) {
   ON products.diet_id = diets.id 
   INNER JOIN power_sources 
   ON products.power_source_id = power_sources.id
-  WHERE 1=1
+  WHERE 1=1 
   `;
 
   const params = [];
@@ -55,13 +53,33 @@ function indexProducts(req, res, next) {
   }
 
   //PRICE MAX
-  if (!isNaN(maxPrice) && maxPrice > 0 && maxPrice >= minPrice) {
+  if (!isNaN(maxPrice) && maxPrice > 0) {
     query += "AND products.price <= ?";
     params.push(req.query.maxPrice);
   }
 
-  // ORDER BY SEMPRE ALLA FINE
-  query += " ORDER BY products.id ASC";
+  const search = req.query.search;
+
+  if (search) {
+    const sqlSearch = `${search}%`;
+    query += " AND products.name LIKE ?";
+    params.push(sqlSearch);
+  }
+
+  const suggested = req.query.is_featured;
+  if (suggested === "suggested") {
+    query += "AND products.is_featured = ?";
+    params.push(1);
+  }
+
+  const created = req.query.created_at;
+  if (created === "last") {
+    query += " ORDER BY created_at";
+  }
+
+  if (suggested || created) {
+    query += " LIMIT 5";
+  }
 
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
@@ -71,7 +89,6 @@ function indexProducts(req, res, next) {
       length: result.length,
     });
   });
-  console.log("ciao da index");
 }
 
 /* show */
