@@ -78,7 +78,7 @@ function indexProducts(req, res, next) {
   }
 
   if (suggested || created) {
-    query += " LIMIT 5";
+    query += " LIMIT 6";
   }
 
   connection.query(query, params, (err, result) => {
@@ -90,20 +90,6 @@ function indexProducts(req, res, next) {
     });
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* show */
 function showProducts(req, res, next) {
