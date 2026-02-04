@@ -16,8 +16,9 @@ function indexProducts(req, res, next) {
   WHERE 1=1
   `;
 
+  //--------------FILTRI PAGE PRODUCTS---------------------------
   const params = []
-
+  //DIETA
   if (req.query.diet) {
     query += " AND diets.slug =?"
     params.push(req.query.diet)
@@ -44,29 +45,41 @@ function indexProducts(req, res, next) {
   }
 
 
-
-  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default --da implementare
-
   //minprice>0 e maxPrice>0  && maxPrice maggiore di minPrice 
 
   const minPrice = parseFloat(req.query.minPrice)
   const maxPrice = parseFloat(req.query.maxPrice)
 
+  //imposto valori di default del minPrice
+  if (isNaN(minPrice)) minPrice = 0;
 
-  //PRICE MIN
-  if (!isNaN(minPrice) && minPrice >= 0) {
-    query += "AND products.price >= ?"
-    params.push(req.query.minPrice)
-  }
 
-  //PRICE MAX
-  if (!isNaN(maxPrice) && maxPrice > 0 && maxPrice >= minPrice) {
-    query += "AND products.price <= ?"
-    params.push(req.query.maxPrice)
-  }
+  // //PRICE MIN
+  if (!isNaN(minPrice) && minPrice >= 0 && (isNaN(minPrice) || maxPrice >= minPrice)) {
+     query += " AND products.price >= ?"
+     params.push(minPrice)
+   }
+
+  // //PRICE MAX
+  // if (!isNaN(maxPrice) && maxPrice > 0) {
+  //   query += " AND products.price <= ?"
+  //   params.push(maxPrice)
+  // }
+
+  //----------------------HOME------------------------------
+  //I NOSTRI CONSIGLI
+ /*  if (req.query.favourite === "stringa") {
+    query += " AND  is_featured = ?"
+    params.push(1)
+
+
+  } */
+  //I NUOVI ARRIVI
+
+
 
   // ORDER BY SEMPRE ALLA FINE
-  query += " ORDER BY products.id ASC"
+ /*  query += " ORDER BY products.id ASC" */
 
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
@@ -79,6 +92,20 @@ function indexProducts(req, res, next) {
   })
   console.log("ciao da index");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* show */
 function showProducts(req, res, next) {
