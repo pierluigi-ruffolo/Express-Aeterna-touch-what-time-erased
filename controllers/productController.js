@@ -58,8 +58,15 @@ function indexProducts(req, res, next) {
     params.push(req.query.maxPrice);
   }
 
-  const suggested = req.query.is_featured;
+  const search = req.query.search;
 
+  if (search) {
+    const sqlSearch = `${search}%`;
+    query += " AND products.name LIKE ?";
+    params.push(sqlSearch);
+  }
+
+  const suggested = req.query.is_featured;
   if (suggested === "suggested") {
     query += "AND products.is_featured = ?";
     params.push(1);
