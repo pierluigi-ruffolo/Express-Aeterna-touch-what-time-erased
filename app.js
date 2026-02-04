@@ -8,7 +8,11 @@ const port = process.env.PORT;
 
 app.use(express.static("public"));
 app.use(express.json());
-
+app.use(
+  corse({
+    origin: process.env.REACT_URL,
+  }),
+);
 app.use("/api/products", routerProducts);
 app.use("/api", routerCategory);
 app.use(notFound);
