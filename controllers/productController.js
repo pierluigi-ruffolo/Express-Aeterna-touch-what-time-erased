@@ -2,8 +2,6 @@ import connection from "../db/db.js";
 import transporter from "../mailer.js";
 /* index */
 function indexProducts(req, res, next) {
-  console.log("test");
-
   let query = `
    SELECT products.*, diets.slug AS diet, eras.slug AS era, power_sources.slug AS power_source
   FROM products
@@ -13,84 +11,84 @@ function indexProducts(req, res, next) {
   ON products.diet_id = diets.id 
   INNER JOIN power_sources 
   ON products.power_source_id = power_sources.id
-  WHERE 1=1
+  WHERE 1=1 
   `;
 
-  //--------------FILTRI PAGE PRODUCTS---------------------------
-  const params = []
-  //DIETA
+  const params = [];
+
   if (req.query.diet) {
-    query += " AND diets.slug =?"
-    params.push(req.query.diet)
+    query += " AND diets.slug =?";
+    params.push(req.query.diet);
   }
 
   //ERAS
   if (req.query.era) {
-    query += " AND eras.slug=?"
-    params.push(req.query.era)
-
+    query += " AND eras.slug=?";
+    params.push(req.query.era);
   }
 
   //POWER_SOURCE
   if (req.query.power_source) {
-    query += " AND power_sources.slug=?"
-    params.push(req.query.power_source)
+    query += " AND power_sources.slug=?";
+    params.push(req.query.power_source);
   }
-
 
   //DIMENSION
   if (req.query.dimension) {
-    query += " AND products.dimension=?"
-    params.push(req.query.dimension)
+    query += " AND products.dimension=?";
+    params.push(req.query.dimension);
   }
 
+  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default --da implementare
 
-  //minprice>0 e maxPrice>0  && maxPrice maggiore di minPrice 
+  //minprice>0 e maxPrice>0  && maxPrice maggiore di minPrice
 
-  const minPrice = parseFloat(req.query.minPrice)
-  const maxPrice = parseFloat(req.query.maxPrice)
+  const minPrice = parseFloat(req.query.minPrice);
+  const maxPrice = parseFloat(req.query.maxPrice);
 
-  //imposto valori di default del minPrice
-  if (isNaN(minPrice)) minPrice = 0;
+  //PRICE MIN
+  if (!isNaN(minPrice) && minPrice >= 0) {
+    query += "AND products.price >= ?";
+    params.push(req.query.minPrice);
+  }
 
+  //PRICE MAX
+  if (!isNaN(maxPrice) && maxPrice > 0) {
+    query += "AND products.price <= ?";
+    params.push(req.query.maxPrice);
+  }
 
-  // //PRICE MIN
-  if (!isNaN(minPrice) && minPrice >= 0 && (isNaN(minPrice) || maxPrice >= minPrice)) {
-     query += " AND products.price >= ?"
-     params.push(minPrice)
-   }
+  const search = req.query.search;
 
-  // //PRICE MAX
-  // if (!isNaN(maxPrice) && maxPrice > 0) {
-  //   query += " AND products.price <= ?"
-  //   params.push(maxPrice)
-  // }
+  if (search) {
+    const sqlSearch = `${search}%`;
+    query += " AND products.name LIKE ?";
+    params.push(sqlSearch);
+  }
 
-  //----------------------HOME------------------------------
-  //I NOSTRI CONSIGLI
- /*  if (req.query.favourite === "stringa") {
-    query += " AND  is_featured = ?"
-    params.push(1)
+  const suggested = req.query.is_featured;
+  if (suggested === "suggested") {
+    query += "AND products.is_featured = ?";
+    params.push(1);
+  }
 
+  const created = req.query.created_at;
+  if (created === "last") {
+    query += " ORDER BY created_at";
+  }
 
-  } */
-  //I NUOVI ARRIVI
-
-
-
-  // ORDER BY SEMPRE ALLA FINE
- /*  query += " ORDER BY products.id ASC" */
+  if (suggested || created) {
+    query += " LIMIT 5";
+  }
 
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
 
-
     return res.json({
       results: result,
-      length: result.length
-    })
-  })
-  console.log("ciao da index");
+      length: result.length,
+    });
+  });
 }
 
 
@@ -180,6 +178,13 @@ function storeProducts(req, res, next) {
         "Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
     });
   }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const convalida = emailRegex.test(customer.email);
+  if (!convalida) {
+    return res.status(400).json({
+      message: "Errore nel formato dell'email.",
+    });
+  }
 
   // 2. Controllo Formato Carrello
   let cartError = false;
@@ -213,7 +218,6 @@ function storeProducts(req, res, next) {
         (p) => p.id === itemCarrello.product_id,
       );
       if (prodottoVero) {
-        // FIX: Convertiamo esplicitamente in Numero per evitare errori con toFixed()
         const prezzoUnitario = Number(prodottoVero.price);
         const costoRiga = prezzoUnitario * itemCarrello.quantity;
 

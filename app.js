@@ -3,12 +3,17 @@ import routerProducts from "./routers/productRouter.js";
 import routerCategory from "./routers/categoryRouters.js";
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import cors from "cors";
 const app = express();
 const port = process.env.PORT;
 
 app.use(express.static("public"));
 app.use(express.json());
-
+app.use(
+  cors({
+    origin: process.env.REACT_URL,
+  }),
+);
 app.use("/api/products", routerProducts);
 app.use("/api", routerCategory);
 app.use(notFound);
