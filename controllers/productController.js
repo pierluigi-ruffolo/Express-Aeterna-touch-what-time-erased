@@ -78,7 +78,7 @@ function indexProducts(req, res, next) {
   }
 
   if (suggested || created) {
-    query += " LIMIT 5";
+    query += " LIMIT 6";
   }
 
   connection.query(query, params, (err, result) => {
@@ -118,6 +118,8 @@ function showProducts(req, res, next) {
 
     const product = results[0];
 
+
+    //correlati
     const sqlRecommended = `
       (SELECT *, 'stessa_dieta' AS motivo FROM products WHERE diet_id = ? AND id != ? LIMIT 1)
       UNION
