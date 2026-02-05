@@ -341,35 +341,54 @@ function storeProducts(req, res, next) {
         connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
 
-          // 7. Invio Mail (dentro la callback finale)
-          /* try {
-            await transporter.sendMail({
+          try {
+            const mailCliente = transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
-              cc: process.env.MAIL,
-              subject: `[AETERNA] Protocollo di Spedizione Attivato: #${nuovoIdAcquisto}`,
+              subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
               html: `
-                                <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-                                    <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
-                                    <p>Egr. <strong>${customer.shipping_name} ${customer.shipping_surname}</strong>,</p>
-                                    <p>Il tuo ordine <strong>#${nuovoIdAcquisto}</strong> è stato convalidato.</p>
-                                    <p><strong>Riepilogo:</strong></p>
-                                    <ul>${listaProdottiMail}</ul>
-                                    <hr>
-                                    <p>Spedizione: ${costoSpedizione.toFixed(2)}€</p>
-                                    <h3 style="color: #111;">Totale Investimento: ${totaleFinale.toFixed(2)}€</h3>
-                                    <div style="background: #f0fff4; padding: 15px; border: 1px dashed #27ae60; border-radius: 8px;">
-                                        <p style="margin:0; color: #27ae60;">🌱 <strong>Bio-Sostenibilità:</strong> ${donazioneOnlus}€ verranno devoluti per la protezione delle specie a rischio.</p>
-                                    </div>
-                                    <p style="font-size: 12px; color: #888; margin-top: 20px;">"Il futuro non è scritto, è costruito riga dopo riga."</p>
-                                </div>`,
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+          <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
+          <p>Gentile <strong>${customer.shipping_name}</strong>, il tuo investimento è stato convalidato.</p>
+          <p><strong>Riepilogo:</strong></p>
+          <ul>${listaProdottiMail}</ul>
+          <hr>
+          <p>Totale: <strong>${Number(totaleFinale).toFixed(2)}€</strong></p>
+          <div style="background: #f0fff4; padding: 15px; border-radius: 8px;">
+             <p style="margin:0; color: #27ae60;">🌱 Bio-Sostenibilità: ${donazioneOnlus}€ devoluti.</p>
+          </div>
+        </div>`,
             });
-            console.log("Mail di conferma inviata.");
-          } catch (mailErr) {
-            console.error("Errore Mail:", mailErr.message);
-          } */
 
-          // 8. Risposta Finale al Client
+            const mailVenditore = transporter.sendMail({
+              from: '"Aeterna System 🤖" <system@aeterna.email>',
+              to: process.env.MAIL,
+              subject: `[LOGISTICA] Nuovo Ordine Ricevuto: #${nuovoIdAcquisto}`,
+              html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 2px solid #7000ff; padding: 20px;">
+          <h2 style="color: #7000ff;">NUOVO ORDINE DA ELABORARE</h2>
+          <p>ID Ordine: #${nuovoIdAcquisto} | Fattura: ${invoiceNumber}</p>
+          <hr>
+          <p><strong>Dati Spedizione:</strong><br>
+          ${customer.shipping_name} ${customer.shipping_surname}<br>
+          ${customer.shipping_street}, ${customer.shipping_city}<br>
+
+          <hr>
+          <ul>${listaProdottiMail}</ul>
+        </div>`,
+            });
+
+            await Promise.all([mailCliente, mailVenditore]);
+            console.log(
+              "Notifiche inviate con successo a Cliente e Venditore.",
+            );
+          } catch (mailErr) {
+            console.error(
+              "Errore durante l'invio delle notifiche:",
+              mailErr.message,
+            );
+          }
+
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
