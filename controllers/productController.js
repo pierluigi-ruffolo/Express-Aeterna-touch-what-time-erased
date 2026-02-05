@@ -130,9 +130,18 @@ function showProducts(req, res, next) {
     `;
 
     const params = [
-      product.diet_id, product.id, 
-      product.era_id, product.id, product.diet_id, product.id,
-      product.power_source_id, product.id,  product.diet_id, product.id, product.era_id, product.id,
+      product.diet_id,
+      product.id,
+      product.era_id,
+      product.id,
+      product.diet_id,
+      product.id,
+      product.power_source_id,
+      product.id,
+      product.diet_id,
+      product.id,
+      product.era_id,
+      product.id,
     ];
 
     connection.query(sqlRecommended, params, (err, recommendedResults) => {
@@ -288,7 +297,7 @@ function storeProducts(req, res, next) {
           if (err) return next(err);
 
           // 7. Invio Mail (dentro la callback finale)
-          try {
+          /* try {
             await transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
@@ -313,15 +322,15 @@ function storeProducts(req, res, next) {
             console.log("Mail di conferma inviata.");
           } catch (mailErr) {
             console.error("Errore Mail:", mailErr.message);
-          }
+          } */
 
           // 8. Risposta Finale al Client
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
             fattura: invoiceNumber,
-            totale: totaleFinale.toFixed(2),
-            donazione_onlus: donazioneOnlus,
+            totale: Number(totaleFinale),
+            donazione_onlus: Number(donazioneOnlus),
           });
         });
       });

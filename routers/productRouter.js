@@ -9,7 +9,5 @@ const router = express.Router();
 router.get("/", indexProducts);
 /* show */
 router.get("/:slug", showProducts);
-/* store */
-router.post("/", storeProducts);
 
 export default router;
