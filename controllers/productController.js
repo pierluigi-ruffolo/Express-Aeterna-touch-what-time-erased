@@ -48,13 +48,13 @@ function indexProducts(req, res, next) {
 
   //PRICE MIN
   if (!isNaN(minPrice) && minPrice >= 0) {
-    query += "AND products.price >= ?";
+    query += " AND products.price >= ?";
     params.push(req.query.minPrice);
   }
 
   //PRICE MAX
   if (!isNaN(maxPrice) && maxPrice > 0) {
-    query += "AND products.price <= ?";
+    query += " AND products.price <= ?";
     params.push(req.query.maxPrice);
   }
 
@@ -68,7 +68,7 @@ function indexProducts(req, res, next) {
 
   const suggested = req.query.is_featured;
   if (suggested === "suggested") {
-    query += "AND products.is_featured = ?";
+    query += " AND products.is_featured = ?";
     params.push(1);
   }
 
