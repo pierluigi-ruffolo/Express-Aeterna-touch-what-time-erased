@@ -4,7 +4,10 @@ import transporter from "../mailer.js";
 function indexProducts(req, res, next) {
   let query = `
    SELECT 
-   products.name, products.slug, products.description, products.price, products.url_image, products.dimension, 
+   products.name, products.slug, products.description, 
+   products.price, 
+   
+   products.url_image, products.dimension, 
    
    diets.slug AS diet, eras.slug AS era, power_sources.slug AS power_source
   FROM products
@@ -16,6 +19,7 @@ function indexProducts(req, res, next) {
   ON products.power_source_id = power_sources.id
   WHERE 1=1 
   `;
+
 
   const params = [];
 
@@ -90,8 +94,12 @@ function indexProducts(req, res, next) {
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
 
+      const newArray = result.map(results=>({
+        ...results, price: Number(results.price)
+      }))
+
     return res.json({
-      results: result,
+      results: newArray,
       length: result.length,
     });
   });
