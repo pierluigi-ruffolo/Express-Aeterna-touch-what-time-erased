@@ -77,7 +77,10 @@ function indexProducts(req, res, next) {
     query += " ORDER BY created_at";
   }
 
-  if (suggested || created) {
+  if (
+    req.query.is_featured === "suggested" ||
+    req.query.created_at === "last"
+  ) {
     query += " LIMIT 6";
   }
 
@@ -103,7 +106,6 @@ function showProducts(req, res, next) {
       return res.status(404).json({ message: "Robot non trovato!" });
 
     const product = results[0];
-
 
     //correlati
     const sqlRecommended = `
