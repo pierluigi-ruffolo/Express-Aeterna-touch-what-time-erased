@@ -3,7 +3,10 @@ import transporter from "../mailer.js";
 /* index */
 function indexProducts(req, res, next) {
   let query = `
-   SELECT products.*, diets.slug AS diet, eras.slug AS era, power_sources.slug AS power_source
+   SELECT 
+   products.name, products.slug, products.description, products.price, products.url_image, products.dimension, 
+   
+   diets.slug AS diet, eras.slug AS era, power_sources.slug AS power_source
   FROM products
   INNER JOIN eras
   ON products.era_id = eras.id 
@@ -130,9 +133,9 @@ function showProducts(req, res, next) {
     `;
 
     const params = [
-      product.diet_id, product.id, 
+      product.diet_id, product.id,
       product.era_id, product.id, product.diet_id, product.id,
-      product.power_source_id, product.id,  product.diet_id, product.id, product.era_id, product.id,
+      product.power_source_id, product.id, product.diet_id, product.id, product.era_id, product.id,
     ];
 
     connection.query(sqlRecommended, params, (err, recommendedResults) => {
