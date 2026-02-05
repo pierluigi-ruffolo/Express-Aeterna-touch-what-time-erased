@@ -20,7 +20,6 @@ function indexProducts(req, res, next) {
   WHERE 1=1 
   `;
 
-
   const params = [];
 
   if (req.query.diet) {
@@ -94,9 +93,10 @@ function indexProducts(req, res, next) {
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
 
-      const newArray = result.map(results=>({
-        ...results, price: Number(results.price)
-      }))
+    const newArray = result.map((results) => ({
+      ...results,
+      price: Number(results.price),
+    }));
 
     return res.json({
       results: newArray,
@@ -165,9 +165,6 @@ function showProducts(req, res, next) {
         is_featured: productResult.is_featured,
         url_image: productResult.url_image,
         dimension: productResult.dimension,
-        era_id: productResult.era_id,
-        power_source_id: productResult.power_source_id,
-        diet_id: productResult.diet_id,
       };
 
       const newRecommended = recommended.map((r) => {
@@ -179,26 +176,10 @@ function showProducts(req, res, next) {
           is_featured: Number(r.is_featured),
           url_image: r.url_image,
           dimension: r.dimension,
-          era_id: Number(r.era_id),
-          powe_source: Number(r.power_source_id),
-          diet_id: Number(r.diet_id),
           motivo: r.motivo,
         };
       });
 
-      const newObjRecommended = {
-        name: recommended.name,
-        slug: recommended.slug,
-        description: recommended.description,
-        price: Number(recommended.price),
-        is_featured: Number(recommended.is_featured),
-        url_image: recommended.url_image,
-        dimension: recommended.dimension,
-        era_id: Number(recommended.era_id),
-        powe_source: Number(recommended.power_source_id),
-        diet_id: Number(recommended.diet_id),
-        motivo: recommended.motivo,
-      };
       res.json({
         ...newObjProduct,
         recommended: newRecommended,
@@ -343,8 +324,8 @@ function storeProducts(req, res, next) {
         connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
 
-          try {
-            const mailCliente = transporter.sendMail({
+          /*   try {
+             const mailCliente = transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
               subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
@@ -382,7 +363,7 @@ function storeProducts(req, res, next) {
 
             await Promise.all([mailCliente, mailVenditore]);
             console.log(
-              "Notifiche inviate con successo a Cliente e Venditore.",
+              "Notifiche inviate con successo a Cliente e Venditore.", 
             );
           } catch (mailErr) {
             console.error(
@@ -390,7 +371,7 @@ function storeProducts(req, res, next) {
               mailErr.message,
             );
           }
-
+ */
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
