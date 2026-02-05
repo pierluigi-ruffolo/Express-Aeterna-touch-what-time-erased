@@ -45,9 +45,8 @@ function indexProducts(req, res, next) {
     params.push(req.query.dimension);
   }
 
-  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default 
+  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default
   //minprice>0 e maxPrice>0  && maxPrice maggiore di minPrice
-;
   const minPrice = parseFloat(req.query.minPrice);
   const maxPrice = parseFloat(req.query.maxPrice);
 
@@ -56,8 +55,10 @@ function indexProducts(req, res, next) {
 
   // Applico il filtro solo se nessun conflitto tra min e max e min e max validi,o uno o l'altro non valido ne applica solo uno
   if (
-    (hasValidMin && hasValidMax && maxPrice >= minPrice) ||(hasValidMin && !hasValidMax) ||(!hasValidMin && hasValidMax)) {
-
+    (hasValidMin && hasValidMax && maxPrice >= minPrice) ||
+    (hasValidMin && !hasValidMax) ||
+    (!hasValidMin && hasValidMax)
+  ) {
     if (hasValidMin) {
       query += " AND products.price >= ?";
       params.push(minPrice);
@@ -97,9 +98,10 @@ function indexProducts(req, res, next) {
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
 
-    const newArray = result.map(results => ({
-      ...results, price: Number(results.price)
-    }))
+    const newArray = result.map((results) => ({
+      ...results,
+      price: Number(results.price),
+    }));
 
     return res.json({
       results: newArray,
@@ -112,13 +114,14 @@ function indexProducts(req, res, next) {
 function showProducts(req, res, next) {
   const { slug } = req.params;
 
-  const sql = "SELECT * FROM products WHERE slug = ?";
+  const sql =
+    "select products.*, eras.name as eras, diets.name as diets, power_sources.name as power_sources from products inner join eras on eras.id  = products.era_id inner join diets on diets.id = products.diet_id inner join power_sources on power_sources.id = products.power_source_id where products.slug = ?";
 
   connection.query(sql, [slug], (err, results) => {
     if (err) return next(err);
     if (results.length === 0)
       return res.status(404).json({ message: "Robot non trovato!" });
-
+    console.log(results);
     const productResult = results[0];
 
     //correlati
@@ -168,6 +171,9 @@ function showProducts(req, res, next) {
         is_featured: productResult.is_featured,
         url_image: productResult.url_image,
         dimension: productResult.dimension,
+        eras: productResult.eras,
+        diets: productResult.diets,
+        power_sources: productResult.power_sources,
       };
 
       const newRecommended = recommended.map((r) => {
