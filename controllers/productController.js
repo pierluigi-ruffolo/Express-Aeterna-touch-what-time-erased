@@ -45,23 +45,27 @@ function indexProducts(req, res, next) {
     params.push(req.query.dimension);
   }
 
-  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default --da implementare
-
+  //maxPrice deve essere con il valore massimo reale quindi deve avere dei valori di default 
   //minprice>0 e maxPrice>0  && maxPrice maggiore di minPrice
-
+;
   const minPrice = parseFloat(req.query.minPrice);
   const maxPrice = parseFloat(req.query.maxPrice);
 
-  //PRICE MIN
-  if (!isNaN(minPrice) && minPrice >= 0) {
-    query += " AND products.price >= ?";
-    params.push(req.query.minPrice);
-  }
+  const hasValidMin = !isNaN(minPrice) && minPrice > 0;
+  const hasValidMax = !isNaN(maxPrice) && maxPrice > 0;
 
-  //PRICE MAX
-  if (!isNaN(maxPrice) && maxPrice > 0) {
-    query += " AND products.price <= ?";
-    params.push(req.query.maxPrice);
+  // Applico il filtro solo se nessun conflitto tra min e max e min e max validi,o uno o l'altro non valido ne applica solo uno
+  if (
+    (hasValidMin && hasValidMax && maxPrice >= minPrice) ||(hasValidMin && !hasValidMax) ||(!hasValidMin && hasValidMax)) {
+
+    if (hasValidMin) {
+      query += " AND products.price >= ?";
+      params.push(minPrice);
+    }
+    if (hasValidMax) {
+      query += " AND products.price <= ?";
+      params.push(maxPrice);
+    }
   }
 
   const search = req.query.search;
@@ -93,10 +97,9 @@ function indexProducts(req, res, next) {
   connection.query(query, params, (err, result) => {
     if (err) return next(err);
 
-    const newArray = result.map((results) => ({
-      ...results,
-      price: Number(results.price),
-    }));
+    const newArray = result.map(results => ({
+      ...results, price: Number(results.price)
+    }))
 
     return res.json({
       results: newArray,
