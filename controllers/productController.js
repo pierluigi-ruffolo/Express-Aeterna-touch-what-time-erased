@@ -203,7 +203,6 @@ function showProducts(req, res, next) {
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
-  // 1. Validazione Campi Obbligatori
   if (
     !customer ||
     !cart ||
@@ -239,7 +238,6 @@ function storeProducts(req, res, next) {
     });
   }
 
-  // 2. Controllo Formato Carrello
   let cartError = false;
   cart.forEach((c) => {
     if (!c.product_id || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
@@ -251,7 +249,6 @@ function storeProducts(req, res, next) {
       .json({ message: "Errore nel formato del carrello." });
   }
 
-  // 3. Recupero Prezzi dal DB
   const productIds = cart.map((item) => item.product_id);
   const sqlPrices = "SELECT id, price, name FROM products WHERE id IN (?)";
 
@@ -291,7 +288,6 @@ function storeProducts(req, res, next) {
     const totaleFinale = subtotale + costoSpedizione;
     const donazioneOnlus = (totaleFinale * 0.2).toFixed(2);
 
-    // 4. Inserimento Purchase
     const sqlPurchase = `INSERT INTO purchases (customer_email, shipping_name, shipping_surname, shipping_street, shipping_city, shipping_postcode, shipping_province_state, shipping_country, subtotal, shipping_cost, total_amount, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const datiP = [
       customer.email,
@@ -312,7 +308,6 @@ function storeProducts(req, res, next) {
       if (err) return next(err);
       const nuovoIdAcquisto = result.insertId;
 
-      // 5. Inserimento Invoice
       const invoiceNumber = `INV-${Date.now()}`;
       const sqlInv = `INSERT INTO invoices (purchase_id, invoice_number, billing_name, billing_surname, billing_street, billing_city, billing_postcode, billing_province_state, billing_country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const datiI = [
@@ -330,7 +325,6 @@ function storeProducts(req, res, next) {
       connection.query(sqlInv, datiI, (err) => {
         if (err) return next(err);
 
-        // 6. Inserimento Pivot
         const datiPivotFinali = righePivot.map((r) => {
           r[0] = nuovoIdAcquisto;
           return r;
