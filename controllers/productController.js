@@ -108,7 +108,7 @@ function showProducts(req, res, next) {
     if (results.length === 0)
       return res.status(404).json({ message: "Robot non trovato!" });
 
-    const product = results[0];
+    const productResult = results[0];
 
     //correlati
     const sqlRecommended = `
@@ -133,17 +133,67 @@ function showProducts(req, res, next) {
     `;
 
     const params = [
-      product.diet_id, product.id,
-      product.era_id, product.id, product.diet_id, product.id,
-      product.power_source_id, product.id, product.diet_id, product.id, product.era_id, product.id,
+      productResult.diet_id,
+      productResult.id,
+      productResult.era_id,
+      productResult.id,
+      productResult.diet_id,
+      productResult.id,
+      productResult.power_source_id,
+      productResult.id,
+      productResult.diet_id,
+      productResult.id,
+      productResult.era_id,
+      productResult.id,
     ];
 
-    connection.query(sqlRecommended, params, (err, recommendedResults) => {
+    connection.query(sqlRecommended, params, (err, recommended) => {
       if (err) return next(err);
+      const newObjProduct = {
+        name: productResult.name,
+        slug: productResult.slug,
+        description: productResult.description,
+        price: Number(productResult.price),
+        is_featured: productResult.is_featured,
+        url_image: productResult.url_image,
+        dimension: productResult.dimension,
+        era_id: productResult.era_id,
+        power_source_id: productResult.power_source_id,
+        diet_id: productResult.diet_id,
+      };
 
+      const newRecommended = recommended.map((r) => {
+        return {
+          name: r.name,
+          slug: r.slug,
+          description: r.description,
+          price: Number(r.price),
+          is_featured: Number(r.is_featured),
+          url_image: r.url_image,
+          dimension: r.dimension,
+          era_id: Number(r.era_id),
+          powe_source: Number(r.power_source_id),
+          diet_id: Number(r.diet_id),
+          motivo: r.motivo,
+        };
+      });
+
+      const newObjRecommended = {
+        name: recommended.name,
+        slug: recommended.slug,
+        description: recommended.description,
+        price: Number(recommended.price),
+        is_featured: Number(recommended.is_featured),
+        url_image: recommended.url_image,
+        dimension: recommended.dimension,
+        era_id: Number(recommended.era_id),
+        powe_source: Number(recommended.power_source_id),
+        diet_id: Number(recommended.diet_id),
+        motivo: recommended.motivo,
+      };
       res.json({
-        ...product,
-        recommended: recommendedResults,
+        ...newObjProduct,
+        recommended: newRecommended,
       });
     });
   });
@@ -192,7 +242,8 @@ function storeProducts(req, res, next) {
   // 2. Controllo Formato Carrello
   let cartError = false;
   cart.forEach((c) => {
-    if (!c.product_id || !c.quantity || c.quantity <= 0) cartError = true;
+    if (!c.product_id || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
+      cartError = true;
   });
   if (cartError) {
     return res
@@ -291,7 +342,7 @@ function storeProducts(req, res, next) {
           if (err) return next(err);
 
           // 7. Invio Mail (dentro la callback finale)
-          try {
+          /* try {
             await transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
@@ -316,15 +367,15 @@ function storeProducts(req, res, next) {
             console.log("Mail di conferma inviata.");
           } catch (mailErr) {
             console.error("Errore Mail:", mailErr.message);
-          }
+          } */
 
           // 8. Risposta Finale al Client
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
             fattura: invoiceNumber,
-            totale: totaleFinale.toFixed(2),
-            donazione_onlus: donazioneOnlus,
+            totale: Number(totaleFinale),
+            donazione_onlus: Number(donazioneOnlus),
           });
         });
       });
