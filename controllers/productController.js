@@ -201,11 +201,15 @@ function showProducts(req, res, next) {
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
+
   if (
     !customer ||
+
     !cart ||
     cart.length === 0 ||
+
     !billing ||
+
     !customer.email ||
     !customer.shipping_name ||
     !customer.shipping_surname ||
@@ -215,6 +219,7 @@ function storeProducts(req, res, next) {
     !customer.shipping_province_state ||
     !customer.shipping_country ||
     !customer.payment_method ||
+
     !billing.name ||
     !billing.surname ||
     !billing.street ||
@@ -225,14 +230,77 @@ function storeProducts(req, res, next) {
   ) {
     return res.status(400).json({
       message:
-        "ERROR-Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
+        "ERROR 400 - Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
     });
+
+
+
+
   }
+
+  //funzione che mi scorre ogni nome cognome, città,  lettera per lettera e verifica che non sia un numero o carattere speciale escluso accenti e apostrofi
+  function notValidInput(input) {
+
+
+     for (let i = 0; i < input.length; i++) {
+       const char = input[i]
+
+      if (!((char >= "A" && char <= "Z") || 
+      (char >= "a" && char <= "z") || 
+      (char ===" ")||
+      (char==="'")||
+      (char==="à")||
+      (char==="è")||
+      (char==="ì")||
+      (char==="ò")||
+      (char==="ù"))) {
+        return true;
+      }
+    }
+     return false;
+   }
+
+   //name
+  if(notValidInput(customer.shipping_name)||(notValidInput(billing.name))){
+    return res.status(400).json({
+      message: "ERROR 400 - il nome non deve contenere numeri o caratteri speciali."
+    })
+  }
+
+  //surname
+   if(notValidInput(customer.shipping_surname)||(notValidInput(billing.surname) ) ){
+    return res.status(400).json({
+      message: "ERROR 400 - il cognome non deve contenere numeri o caratteri speciali."
+    })
+  }
+
+  //city
+  if(notValidInput(customer.shipping_city)||(notValidInput(billing.city))){
+    return res.status(400).json({
+      message: "ERROR 400 - la città non deve contenere numeri o caratteri speciali."
+    })
+  }
+
+  //province
+  if(notValidInput(customer.shipping_province_state)||(notValidInput(billing.province_state))){
+    return res.status(400).json({
+      message: "ERROR 400 - la provincia non deve contenere numeri o caratteri speciali."
+    })
+  }
+
+   //country
+  if(notValidInput(customer.shipping_country )||(notValidInput(billing.country))){
+    return res.status(400).json({
+      message: "ERROR 400 - il paese non deve contenere numeri o caratteri speciali."
+    })
+  }
+  
+   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const convalida = emailRegex.test(customer.email);
   if (!convalida) {
     return res.status(400).json({
-      message: "ERROR-Errore nel formato dell'email.",
+      message: "ERROR 400 - Errore nel formato dell'email.",
     });
   }
 
@@ -244,7 +312,7 @@ function storeProducts(req, res, next) {
   if (cartError) {
     return res
       .status(400)
-      .json({ message: "ERROR-Errore nel formato del carrello." });
+      .json({ message: "ERROR 400 - Errore nel formato del carrello." });
   }
 
   const productIds = cart.map((item) => item.product_id);
@@ -255,7 +323,7 @@ function storeProducts(req, res, next) {
     if (productsInDb.length !== [...new Set(productIds)].length) {
       return res
         .status(400)
-        .json({ message: "Uno o più prodotti non esistono nel database." });
+        .json({ message: "ERROR 400 - Uno o più prodotti non esistono nel database." });
     }
 
     let subtotale = 0;
