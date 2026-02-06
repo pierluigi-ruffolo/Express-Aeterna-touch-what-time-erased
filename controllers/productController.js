@@ -122,7 +122,9 @@ function showProducts(req, res, next) {
   connection.query(sql, [slug], (err, results) => {
     if (err) return next(err);
     if (results.length === 0)
-      return res.status(404).json({ message: "404 NOT FOUND - Robot non trovato!" });
+      return res
+        .status(404)
+        .json({ message: "404 NOT FOUND - Robot non trovato!" });
     console.log(results);
     const productResult = results[0];
 
@@ -203,15 +205,11 @@ function showProducts(req, res, next) {
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
-
   if (
     !customer ||
-
     !cart ||
     cart.length === 0 ||
-
     !billing ||
-
     !customer.email ||
     !customer.shipping_name ||
     !customer.shipping_surname ||
@@ -221,7 +219,6 @@ function storeProducts(req, res, next) {
     !customer.shipping_province_state ||
     !customer.shipping_country ||
     !customer.payment_method ||
-
     !billing.name ||
     !billing.surname ||
     !billing.street ||
@@ -234,70 +231,81 @@ function storeProducts(req, res, next) {
       message:
         "ERROR 400 - Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
     });
-
-
-
-
   }
 
   //funzione che mi scorre ogni nome cognome, città,  lettera per lettera e verifica che non sia un numero o carattere speciale escluso accenti e apostrofi
   function notValidInput(input) {
+    for (let i = 0; i < input.length; i++) {
+      const char = input[i];
 
-
-     for (let i = 0; i < input.length; i++) {
-       const char = input[i]
-
-      if (!((char >= "A" && char <= "Z") || 
-      (char >= "a" && char <= "z") || 
-      (char ===" ")||
-      (char==="'")||
-      (char==="à")||
-      (char==="è")||
-      (char==="ì")||
-      (char==="ò")||
-      (char==="ù"))) {
+      if (
+        !(
+          (char >= "A" && char <= "Z") ||
+          (char >= "a" && char <= "z") ||
+          char === " " ||
+          char === "'" ||
+          char === "à" ||
+          char === "è" ||
+          char === "ì" ||
+          char === "ò" ||
+          char === "ù"
+        )
+      ) {
         return true;
       }
     }
-     return false;
-   }
+    return false;
+  }
 
-   //name
-  if(notValidInput(customer.shipping_name)||(notValidInput(billing.name))){
+  //name
+  if (notValidInput(customer.shipping_name) || notValidInput(billing.name)) {
     return res.status(400).json({
-      message: "ERROR 400 - il nome non deve contenere numeri o caratteri speciali."
-    })
+      message:
+        "ERROR 400 - il nome non deve contenere numeri o caratteri speciali.",
+    });
   }
 
   //surname
-   if(notValidInput(customer.shipping_surname)||(notValidInput(billing.surname) ) ){
+  if (
+    notValidInput(customer.shipping_surname) ||
+    notValidInput(billing.surname)
+  ) {
     return res.status(400).json({
-      message: "ERROR 400 - il cognome non deve contenere numeri o caratteri speciali."
-    })
+      message:
+        "ERROR 400 - il cognome non deve contenere numeri o caratteri speciali.",
+    });
   }
 
   //city
-  if(notValidInput(customer.shipping_city)||(notValidInput(billing.city))){
+  if (notValidInput(customer.shipping_city) || notValidInput(billing.city)) {
     return res.status(400).json({
-      message: "ERROR 400 - la città non deve contenere numeri o caratteri speciali."
-    })
+      message:
+        "ERROR 400 - la città non deve contenere numeri o caratteri speciali.",
+    });
   }
 
   //province
-  if(notValidInput(customer.shipping_province_state)||(notValidInput(billing.province_state))){
+  if (
+    notValidInput(customer.shipping_province_state) ||
+    notValidInput(billing.province_state)
+  ) {
     return res.status(400).json({
-      message: "ERROR 400 - la provincia non deve contenere numeri o caratteri speciali."
-    })
+      message:
+        "ERROR 400 - la provincia non deve contenere numeri o caratteri speciali.",
+    });
   }
 
-   //country
-  if(notValidInput(customer.shipping_country )||(notValidInput(billing.country))){
+  //country
+  if (
+    notValidInput(customer.shipping_country) ||
+    notValidInput(billing.country)
+  ) {
     return res.status(400).json({
-      message: "ERROR 400 - il paese non deve contenere numeri o caratteri speciali."
-    })
+      message:
+        "ERROR 400 - il paese non deve contenere numeri o caratteri speciali.",
+    });
   }
-  
-   
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const convalida = emailRegex.test(customer.email);
   if (!convalida) {
@@ -308,7 +316,8 @@ function storeProducts(req, res, next) {
 
   let cartError = false;
   cart.forEach((c) => {
-    if (!c.product_id || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
+    // Sostituito product_id con product_slug
+    if (!c.product_slug || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
       cartError = true;
   });
   if (cartError) {
@@ -317,15 +326,21 @@ function storeProducts(req, res, next) {
       .json({ message: "ERROR 400 - Errore nel formato del carrello." });
   }
 
-  const productIds = cart.map((item) => item.product_id);
-  const sqlPrices = "SELECT id, price, name FROM products WHERE id IN (?)";
+  // Estrazione degli slug dal carrello
+  const productSlugs = cart.map((item) => item.product_slug);
+  // Query aggiornata per cercare tramite slug
+  const sqlPrices =
+    "SELECT id, price, name, slug FROM products WHERE slug IN (?)";
 
-  connection.query(sqlPrices, [productIds], (err, productsInDb) => {
+  connection.query(sqlPrices, [productSlugs], (err, productsInDb) => {
     if (err) return next(err);
-    if (productsInDb.length !== [...new Set(productIds)].length) {
+    // Controllo basato sulla lunghezza degli slug unici
+    if (productsInDb.length !== [...new Set(productSlugs)].length) {
       return res
         .status(400)
-        .json({ message: "ERROR 400 - Uno o più prodotti non esistono nel database." });
+        .json({
+          message: "ERROR 400 - Uno o più prodotti non esistono nel database.",
+        });
     }
 
     let subtotale = 0;
@@ -333,8 +348,9 @@ function storeProducts(req, res, next) {
     let listaProdottiMail = "";
 
     cart.forEach((itemCarrello) => {
+      // Ricerca tramite slug invece che ID
       const prodottoVero = productsInDb.find(
-        (p) => p.id === itemCarrello.product_id,
+        (p) => p.slug === itemCarrello.product_slug,
       );
       if (prodottoVero) {
         const prezzoUnitario = Number(prodottoVero.price);
@@ -528,3 +544,5 @@ ${string}`;
 }
 
 export { indexProducts, showProducts, storeProducts, storeChat };
+
+export { indexProducts, showProducts, storeProducts };
