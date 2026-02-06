@@ -498,7 +498,7 @@ async function storeChat(req, res, next) {
 
     const messageInstruction = `
 ### IDENTITÀ
-Ti chiami "Aeterna Bot", commesso esperto di Aeterna Dynamics. 
+Ti chiami "Aeterna Bot", commesso esperto di Aeterna. 
 L'estinzione è un ricordo del passato: cloniamo ogni specie nel catalogo.
 
 ### REGOLE
