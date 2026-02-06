@@ -197,19 +197,16 @@ function showProducts(req, res, next) {
   });
 }
 
+
 /* store */
 function storeProducts(req, res, next) {
   const { customer, cart, billing } = req.body;
 
-
   if (
     !customer ||
-
     !cart ||
     cart.length === 0 ||
-
     !billing ||
-
     !customer.email ||
     !customer.shipping_name ||
     !customer.shipping_surname ||
@@ -219,7 +216,6 @@ function storeProducts(req, res, next) {
     !customer.shipping_province_state ||
     !customer.shipping_country ||
     !customer.payment_method ||
-
     !billing.name ||
     !billing.surname ||
     !billing.street ||
@@ -232,18 +228,12 @@ function storeProducts(req, res, next) {
       message:
         "ERROR 400 - Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
     });
-
-
-
-
   }
 
   //funzione che mi scorre ogni nome cognome, città,  lettera per lettera e verifica che non sia un numero o carattere speciale escluso accenti e apostrofi
   function notValidInput(input) {
-
-
-     for (let i = 0; i < input.length; i++) {
-       const char = input[i]
+    for (let i = 0; i < input.length; i++) {
+      const char = input[i]
 
       if (!((char >= "A" && char <= "Z") || 
       (char >= "a" && char <= "z") || 
@@ -306,7 +296,8 @@ function storeProducts(req, res, next) {
 
   let cartError = false;
   cart.forEach((c) => {
-    if (!c.product_id || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
+    // Sostituito product_id con product_slug
+    if (!c.product_slug || !c.quantity || c.quantity <= 0 || isNaN(c.quantity))
       cartError = true;
   });
   if (cartError) {
@@ -315,12 +306,15 @@ function storeProducts(req, res, next) {
       .json({ message: "ERROR 400 - Errore nel formato del carrello." });
   }
 
-  const productIds = cart.map((item) => item.product_id);
-  const sqlPrices = "SELECT id, price, name FROM products WHERE id IN (?)";
+  // Estrazione degli slug dal carrello
+  const productSlugs = cart.map((item) => item.product_slug);
+  // Query aggiornata per cercare tramite slug
+  const sqlPrices = "SELECT id, price, name, slug FROM products WHERE slug IN (?)";
 
-  connection.query(sqlPrices, [productIds], (err, productsInDb) => {
+  connection.query(sqlPrices, [productSlugs], (err, productsInDb) => {
     if (err) return next(err);
-    if (productsInDb.length !== [...new Set(productIds)].length) {
+    // Controllo basato sulla lunghezza degli slug unici
+    if (productsInDb.length !== [...new Set(productSlugs)].length) {
       return res
         .status(400)
         .json({ message: "ERROR 400 - Uno o più prodotti non esistono nel database." });
@@ -331,8 +325,9 @@ function storeProducts(req, res, next) {
     let listaProdottiMail = "";
 
     cart.forEach((itemCarrello) => {
+      // Ricerca tramite slug invece che ID
       const prodottoVero = productsInDb.find(
-        (p) => p.id === itemCarrello.product_id,
+        (p) => p.slug === itemCarrello.product_slug,
       );
       if (prodottoVero) {
         const prezzoUnitario = Number(prodottoVero.price);
@@ -400,8 +395,8 @@ function storeProducts(req, res, next) {
 
         connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
-
-          /*   try {
+// MAIL
+           try {
              const mailCliente = transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
@@ -448,7 +443,7 @@ function storeProducts(req, res, next) {
               mailErr.message,
             );
           }
- */
+
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
@@ -461,5 +456,7 @@ function storeProducts(req, res, next) {
     });
   });
 }
+
+
 
 export { indexProducts, showProducts, storeProducts };
