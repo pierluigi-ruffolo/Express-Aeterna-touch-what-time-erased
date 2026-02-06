@@ -11,6 +11,7 @@
     "dev": "node  --env-file=.env  --watch app.js"
   },
   "dependencies": {
+    "@google/genai": "^1.40.0",
     "cors": "^2.8.6",
     "crud": "^0.0.28",
     "express": "^5.2.1",

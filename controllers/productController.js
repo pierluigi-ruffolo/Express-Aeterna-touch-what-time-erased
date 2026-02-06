@@ -1,5 +1,6 @@
 import connection from "../db/db.js";
 import transporter from "../mailer.js";
+import { GoogleGenAI } from "@google/genai";
 /* index */
 function indexProducts(req, res, next) {
   let query = `
@@ -394,4 +395,74 @@ function storeProducts(req, res, next) {
   });
 }
 
-export { indexProducts, showProducts, storeProducts };
+async function storeChat(req, res, next) {
+  const { messageUtente, history } = req.body;
+
+  const sql = `
+    SELECT products.name, products.price, eras.name AS eras, diets.name AS diets, power_sources.name AS power_sources 
+    FROM products 
+    INNER JOIN eras ON eras.id = products.era_id 
+    INNER JOIN power_sources ON power_sources.id = products.power_source_id 
+    INNER JOIN diets ON diets.id = products.diet_id`;
+
+  connection.query(sql, async (error, result) => {
+    if (error) return next(error);
+
+    const products = result.map((p) => {
+      return `Nome: ${p.name}, prezzo: ${p.price}, era: ${p.eras}, dieta: ${p.diets}, Alimentazione: ${p.power_sources}`;
+    });
+    const string = products.join("\n");
+
+    const messageInstruction = `
+### IDENTITÀ
+Ti chiami "Aeterna Bot", commesso esperto di Aeterna Dynamics. 
+L'estinzione è un ricordo del passato: cloniamo ogni specie nel catalogo.
+
+### REGOLE
+1. RISPONDI SEMPRE IN ITALIANO.
+2. RISPONDI SOLO IN FORMATO JSON.
+3. Non citare realtà esterne (Amazon, Etsy, etc.).
+
+### SCHEMA JSON DI OUTPUT:
+{
+  "testo_risposta": "Il tuo messaggio di vendita/assistenza in italiano",
+  "prodotti_suggeriti": [
+    { 
+      "nome": "Nome esatto dal catalogo", 
+      "prezzo": "Prezzo", 
+      "era": "Era",
+      "motivo_consiglio": "Breve nota tecnica sul perché consigli questo modello"
+    }
+  ]
+}
+
+### CATALOGO:
+${string}`;
+
+    try {
+      const client = new GoogleGenAI({ apiKey: process.env.KEY_API });
+
+      const response = await client.models.generateContent({
+        model: "gemini-3-flash-preview",
+
+        contents: [
+          ...(history || []),
+          { role: "user", parts: [{ text: messageUtente }] },
+        ],
+        config: {
+          systemInstruction: messageInstruction,
+          responseMimeType: "application/json",
+        },
+      });
+
+      const responseText = response.candidates[0].content.parts[0].text;
+
+      res.json(JSON.parse(responseText));
+    } catch (aiError) {
+      console.error("Errore AI:", aiError);
+      res.status(500).json({ error: "Errore durante la generazione." });
+    }
+  });
+}
+
+export { indexProducts, showProducts, storeProducts, storeChat };
