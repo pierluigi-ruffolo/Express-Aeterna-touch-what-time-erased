@@ -418,51 +418,58 @@ function storeProducts(req, res, next) {
           if (err) return next(err);
 
           try {
-            const mailCliente = await transporter.sendMail({
-              from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
+            const mailOptionsCliente = {
+              from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
               subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
               html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-          <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
-          <p>Gentile <strong>${customer.shipping_name}</strong>, il tuo investimento è stato convalidato.</p>
-          <p><strong>Riepilogo:</strong></p>
-          <ul>${listaProdottiMail}</ul>
-          <hr>
-          <p>Totale: <strong>${Number(totaleFinale).toFixed(2)}€</strong></p>
-          <div style="background: #f0fff4; padding: 15px; border-radius: 8px;">
-             <p style="margin:0; color: #27ae60;">🌱 Bio-Sostenibilità: ${donazioneOnlus}€ devoluti.</p>
-          </div>
-        </div>`,
-            });
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
+        <p>Gentile <strong>${customer.shipping_name}</strong>, il tuo investimento è stato convalidato.</p>
+        <p><strong>Riepilogo:</strong></p>
+        <ul>${listaProdottiMail}</ul>
+        <hr>
+        <p>Totale: <strong>${Number(totaleFinale).toFixed(2)}€</strong></p>
+        <div style="background: #f0fff4; padding: 15px; border-radius: 8px;">
+           <p style="margin:0; color: #27ae60;">🌱 Bio-Sostenibilità: ${donazioneOnlus}€ devoluti.</p>
+        </div>
+      </div>`,
+            };
 
-            const mailVenditore = await transporter.sendMail({
-              from: '"Aeterna System 🤖" <aeterna8@ethereal.email>',
+            const mailOptionsVenditore = {
+              from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
               to: process.env.MAIL,
               subject: `[LOGISTICA] Nuovo Ordine Ricevuto: #${nuovoIdAcquisto}`,
               html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 2px solid #7000ff; padding: 20px;">
-          <h2 style="color: #7000ff;">NUOVO ORDINE DA ELABORARE</h2>
-          <p>ID Ordine: #${nuovoIdAcquisto} | Fattura: ${invoiceNumber}</p>
-          <hr>
-          <p><strong>Dati Spedizione:</strong><br>
-          ${customer.shipping_name} ${customer.shipping_surname}<br>
-          ${customer.shipping_street}, ${customer.shipping_city}<br>
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 2px solid #7000ff; padding: 20px;">
+        <h2 style="color: #7000ff;">NUOVO ORDINE DA ELABORARE</h2>
+        <p>ID Ordine: #${nuovoIdAcquisto} | Fattura: ${invoiceNumber}</p>
+        <hr>
+        <p><strong>Dati Spedizione:</strong><br>
+        ${customer.shipping_name} ${customer.shipping_surname}<br>
+        ${customer.shipping_street}, ${customer.shipping_city}<br>
+        <hr>
+        <ul>${listaProdottiMail}</ul>
+      </div>`,
+            };
 
-          <hr>
-          <ul>${listaProdottiMail}</ul>
-        </div>`,
-            });
+            // INVIO SEQUENZIALE CON PAUSA MAGGIORE
 
-            await Promise.all([mailCliente, mailVenditore]);
-            console.log(
-              "Notifiche inviate con successo a Cliente e Venditore.",
-            );
+            // 1. Invio Cliente
+            await transporter.sendMail(mailOptionsCliente);
+            console.log("Mail CLIENTE inviata.");
+
+            // 2. Pausa più lunga (3 secondi)
+            console.log("Attesa di 3 secondi per Mailtrap...");
+            await new Promise((resolve) => setTimeout(resolve, 11000));
+
+            // 3. Invio Venditore
+            await transporter.sendMail(mailOptionsVenditore);
+            console.log("Mail VENDITORE inviata.");
+
           } catch (mailErr) {
-            console.error(
-              "Errore durante l'invio delle notifiche:",
-              mailErr.message,
-            );
+            // Se fallisce la seconda, logghiamo l'errore specifico ma non blocchiamo l'utente
+            console.error("ERRORE SMTP:", mailErr.message);
           }
 
           res.status(201).json({
