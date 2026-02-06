@@ -4,7 +4,7 @@ import routerCategory from "./routers/categoryRouters.js";
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import cors from "cors";
-import { storeProducts } from "./controllers/productController.js";
+import { storeProducts, storeChat } from "./controllers/productController.js";
 const app = express();
 const port = process.env.PORT;
 
@@ -17,7 +17,8 @@ app.use(
 );
 app.use("/api/products", routerProducts);
 app.use("/api", routerCategory);
-app.use("/api/orders", storeProducts);
+app.post("/api/orders", storeProducts);
+app.post("/api/chat", storeChat);
 app.use(notFound);
 app.use(errorHandler);
 
