@@ -335,8 +335,8 @@ function storeProducts(req, res, next) {
         connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
 
-          /*   try {
-             const mailCliente = transporter.sendMail({
+          try {
+            const mailCliente = transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
               subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
@@ -374,7 +374,7 @@ function storeProducts(req, res, next) {
 
             await Promise.all([mailCliente, mailVenditore]);
             console.log(
-              "Notifiche inviate con successo a Cliente e Venditore.", 
+              "Notifiche inviate con successo a Cliente e Venditore.",
             );
           } catch (mailErr) {
             console.error(
@@ -382,7 +382,7 @@ function storeProducts(req, res, next) {
               mailErr.message,
             );
           }
- */
+
           res.status(201).json({
             success: true,
             ordine_id: nuovoIdAcquisto,
