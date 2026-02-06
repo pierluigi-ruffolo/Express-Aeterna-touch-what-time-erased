@@ -1,6 +1,7 @@
 import connection from "../db/db.js";
 import transporter from "../mailer.js";
 import { GoogleGenAI } from "@google/genai";
+
 /* index */
 function indexProducts(req, res, next) {
   let query = `
@@ -426,14 +427,7 @@ L'estinzione è un ricordo del passato: cloniamo ogni specie nel catalogo.
 ### SCHEMA JSON DI OUTPUT:
 {
   "testo_risposta": "Il tuo messaggio di vendita/assistenza in italiano",
-  "prodotti_suggeriti": [
-    { 
-      "nome": "Nome esatto dal catalogo", 
-      "prezzo": "Prezzo", 
-      "era": "Era",
-      "motivo_consiglio": "Breve nota tecnica sul perché consigli questo modello"
-    }
-  ]
+  
 }
 
 ### CATALOGO:
