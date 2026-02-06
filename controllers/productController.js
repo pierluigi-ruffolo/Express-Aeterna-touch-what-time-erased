@@ -418,7 +418,7 @@ function storeProducts(req, res, next) {
           if (err) return next(err);
 
           try {
-            const mailCliente = transporter.sendMail({
+            const mailCliente = await transporter.sendMail({
               from: '"Aeterna Dynamics 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
               subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
@@ -436,8 +436,8 @@ function storeProducts(req, res, next) {
         </div>`,
             });
 
-            const mailVenditore = transporter.sendMail({
-              from: '"Aeterna System 🤖" <system@aeterna.email>',
+            const mailVenditore = await transporter.sendMail({
+              from: '"Aeterna System 🤖" <aeterna8@ethereal.email>',
               to: process.env.MAIL,
               subject: `[LOGISTICA] Nuovo Ordine Ricevuto: #${nuovoIdAcquisto}`,
               html: `
