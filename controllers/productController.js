@@ -336,11 +336,9 @@ function storeProducts(req, res, next) {
     if (err) return next(err);
     // Controllo basato sulla lunghezza degli slug unici
     if (productsInDb.length !== [...new Set(productSlugs)].length) {
-      return res
-        .status(400)
-        .json({
-          message: "ERROR 400 - Uno o più prodotti non esistono nel database.",
-        });
+      return res.status(400).json({
+        message: "ERROR 400 - Uno o più prodotti non esistono nel database.",
+      });
     }
 
     let subtotale = 0;
@@ -544,5 +542,3 @@ ${string}`;
 }
 
 export { indexProducts, showProducts, storeProducts, storeChat };
-
-export { indexProducts, showProducts, storeProducts };
