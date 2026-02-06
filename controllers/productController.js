@@ -120,7 +120,7 @@ function showProducts(req, res, next) {
   connection.query(sql, [slug], (err, results) => {
     if (err) return next(err);
     if (results.length === 0)
-      return res.status(404).json({ message: "Robot non trovato!" });
+      return res.status(404).json({ message: "404 NOT FOUND - Robot non trovato!" });
     console.log(results);
     const productResult = results[0];
 
@@ -225,14 +225,14 @@ function storeProducts(req, res, next) {
   ) {
     return res.status(400).json({
       message:
-        "Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
+        "ERROR-Errore di validazione: assicurati di aver compilato tutti i dati richiesti.",
     });
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const convalida = emailRegex.test(customer.email);
   if (!convalida) {
     return res.status(400).json({
-      message: "Errore nel formato dell'email.",
+      message: "ERROR-Errore nel formato dell'email.",
     });
   }
 
@@ -244,7 +244,7 @@ function storeProducts(req, res, next) {
   if (cartError) {
     return res
       .status(400)
-      .json({ message: "Errore nel formato del carrello." });
+      .json({ message: "ERROR-Errore nel formato del carrello." });
   }
 
   const productIds = cart.map((item) => item.product_id);
