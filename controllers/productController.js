@@ -203,6 +203,7 @@ function showProducts(req, res, next) {
 
 /* store */
 function storeProducts(req, res, next) {
+
   const { customer, cart, billing } = req.body;
 
   if (
@@ -256,6 +257,13 @@ function storeProducts(req, res, next) {
     }
     return false;
   }
+  // funzione che controlla che il CAP abbia 5 valori numerici da 0 a 9 (quindi non lettere e non simboli come -)
+   function isValidCAP(input) {
+     const cap = input.trim();
+     return /^\d{5}$/.test(cap);
+  }
+
+
 
   //name
   if (notValidInput(customer.shipping_name) || notValidInput(billing.name)) {
@@ -275,6 +283,14 @@ function storeProducts(req, res, next) {
         "ERROR 400 - il cognome non deve contenere numeri o caratteri speciali.",
     });
   }
+  // CAP
+
+  if (!isValidCAP(customer.shipping_postcode) || !isValidCAP(billing.postcode)) {
+    return res.status(400).json({
+      message: "ERROR 400 - Il CAP deve contenere esattamente 5 numeri e non deve essere negativo."
+    });
+  }
+
 
   //city
   if (notValidInput(customer.shipping_city) || notValidInput(billing.city)) {
