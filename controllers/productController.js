@@ -416,7 +416,13 @@ function storeProducts(req, res, next) {
 
         connection.query(sqlPiv, [datiPivotFinali], async (err) => {
           if (err) return next(err);
-
+          res.status(201).json({
+            success: true,
+            ordine_id: nuovoIdAcquisto,
+            fattura: invoiceNumber,
+            totale: Number(totaleFinale),
+            donazione_onlus: Number(donazioneOnlus),
+          });
           try {
             const mailOptionsCliente = {
               from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
@@ -453,38 +459,24 @@ function storeProducts(req, res, next) {
       </div>`,
             };
 
-            // INVIO SEQUENZIALE CON PAUSA MAGGIORE
-
-            // 1. Invio Cliente
             await transporter.sendMail(mailOptionsCliente);
             console.log("Mail CLIENTE inviata.");
 
-            // 2. Pausa più lunga (3 secondi)
-            console.log("Attesa di 3 secondi per Mailtrap...");
+            console.log("Attesa di 11 secondi per Mailtrap...");
             await new Promise((resolve) => setTimeout(resolve, 11000));
 
-            // 3. Invio Venditore
             await transporter.sendMail(mailOptionsVenditore);
             console.log("Mail VENDITORE inviata.");
-
           } catch (mailErr) {
-            // Se fallisce la seconda, logghiamo l'errore specifico ma non blocchiamo l'utente
             console.error("ERRORE SMTP:", mailErr.message);
           }
-
-          res.status(201).json({
-            success: true,
-            ordine_id: nuovoIdAcquisto,
-            fattura: invoiceNumber,
-            totale: Number(totaleFinale),
-            donazione_onlus: Number(donazioneOnlus),
-          });
         });
       });
     });
   });
 }
 
+/* store chat */
 async function storeChat(req, res, next) {
   const { messageUtente, history } = req.body;
 
