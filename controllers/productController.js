@@ -423,7 +423,7 @@ function storeProducts(req, res, next) {
             totale: Number(totaleFinale),
             donazione_onlus: Number(donazioneOnlus),
           });
-          try {
+          /*   try {
             const mailOptionsCliente = {
               from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
@@ -469,7 +469,7 @@ function storeProducts(req, res, next) {
             console.log("Mail VENDITORE inviata.");
           } catch (mailErr) {
             console.error("ERRORE SMTP:", mailErr.message);
-          }
+          } */
         });
       });
     });
