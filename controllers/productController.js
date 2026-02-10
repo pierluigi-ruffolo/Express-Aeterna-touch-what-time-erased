@@ -258,9 +258,9 @@ function storeProducts(req, res, next) {
     return false;
   }
   // funzione che controlla che il CAP abbia 5 valori numerici da 0 a 9 (quindi non lettere e non simboli come -)
-   function isValidCAP(input) {
-     const cap = input.trim();
-     return /^\d{5}$/.test(cap);
+  function isValidCAP(input) {
+    const cap = input.trim();
+    return /^\d{5}$/.test(cap);
   }
 
 
@@ -440,22 +440,57 @@ function storeProducts(req, res, next) {
             donazione_onlus: Number(donazioneOnlus),
           });
           try {
+
+
             const mailOptionsCliente = {
               from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
               subject: `[AETERNA] Conferma Ordine: #${nuovoIdAcquisto}`,
               html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-        <h2 style="color: #7000ff;">AETERNA DYNAMICS</h2>
-        <p>Gentile <strong>${customer.shipping_name}</strong>, il tuo investimento è stato convalidato.</p>
-        <p><strong>Riepilogo:</strong></p>
-        <ul>${listaProdottiMail}</ul>
-        <hr>
-        <p>Totale: <strong>${Number(totaleFinale).toFixed(2)}€</strong></p>
-        <div style="background: #f0fff4; padding: 15px; border-radius: 8px;">
-           <p style="margin:0; color: #27ae60;">🌱 Bio-Sostenibilità: ${donazioneOnlus}€ devoluti.</p>
+    <div style="background-color: #f8f9fa; padding: 40px 10px; font-family: 'Inter', sans-serif; color: #3a3a3a;">
+        <div style="max-width: 600px; margin: auto; background-color: #ffffff; border: 4px solid rgba(69, 194, 216, 0.423); border-radius: 10px; padding: 40px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);">
+            
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #dee2e6; padding-bottom: 20px;">
+                <h1 style="font-family: 'Anta', sans-serif; color: #b3904a; letter-spacing: 2px; margin: 0; font-size: 28px; text-transform: uppercase;">AETERNA</h1>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h4 style="font-family: 'Anta', sans-serif; color: #575757; font-size: 18px; margin-bottom: 15px;">Conferma Protocollo #${nuovoIdAcquisto}</h4>
+                <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                    Grazie <strong style="color: #000;">${customer.shipping_name}</strong>, <br>
+                    Il tuo ordine è stato ricevuto. I nostri sistemi stanno elaborando la tua richiesta di acquisizione bio-robotica.
+                </p>
+            </div>
+
+            <div style="border: 3px double rgba(69, 194, 216, 0.423); border-radius: 10px; padding: 20px; margin-bottom: 25px; background-color: #ffffff;">
+                <h4 style="font-family: 'Anta', sans-serif; color: #575757; margin-top: 0; font-size: 14px; text-transform: uppercase;">Asset in Consegna:</h4>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 14px; color: #585858;">
+                    ${listaProdottiMail}
+                </ul>
+            </div>
+
+            <table style="width: 100%; font-family: 'Anta', sans-serif; color: #3a3a3a;">
+                <tr>
+                    <td style="padding: 5px 0;">Spedizione:</td>
+                    <td style="text-align: right;">${costoSpedizione === 0 ? 'Gratis' : costoSpedizione.toFixed(2) + '€'}</td>
+                </tr>
+                <tr style="font-size: 20px; font-weight: bold;">
+                    <td style="padding-top: 15px; color: #3a3a3a;">TOTALE:</td>
+                    <td style="padding-top: 15px; text-align: right; color: #b3904a;">${Number(totaleFinale).toFixed(2)}€</td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 30px; text-align: center;">
+                <div style="display: inline-block; padding: 12px 30px; background: linear-gradient(to bottom, #e0b969, #a7894f); color: #fff; border-radius: 10px; border: 4px double #ffffff; font-family: 'Anta', sans-serif; font-weight: bold; text-decoration: none;">
+                    ORDINE IN ELABORAZIONE
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; color: #817f7f; font-size: 11px;">
+                <p class="anta-font">AETERNA | BIO-INGEGNERIA | 2026</p>
+            </div>
         </div>
-      </div>`,
+    </div>`
             };
 
             const mailOptionsVenditore = {
@@ -463,17 +498,29 @@ function storeProducts(req, res, next) {
               to: process.env.MAIL,
               subject: `[LOGISTICA] Nuovo Ordine Ricevuto: #${nuovoIdAcquisto}`,
               html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 2px solid #7000ff; padding: 20px;">
-        <h2 style="color: #7000ff;">NUOVO ORDINE DA ELABORARE</h2>
-        <p>ID Ordine: #${nuovoIdAcquisto} | Fattura: ${invoiceNumber}</p>
-        <hr>
-        <p><strong>Dati Spedizione:</strong><br>
-        ${customer.shipping_name} ${customer.shipping_surname}<br>
-        ${customer.shipping_street}, ${customer.shipping_city}<br>
-        <hr>
-        <ul>${listaProdottiMail}</ul>
-      </div>`,
+    <div style="background-color: #ffffff; padding: 20px; font-family: 'Courier New', monospace; border: 3px solid rgba(69, 194, 216, 0.423); color: #3a3a3a;">
+        <h2 style="color: #b3904a; border-bottom: 2px solid rgba(69, 194, 216, 0.423); padding-bottom: 10px;">AVVISO LOGISTICA: ORDINE #${nuovoIdAcquisto}</h2>
+        
+        <p><strong>DATI SPEDIZIONE:</strong></p>
+        <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #50cbd1;">
+            NOME: ${customer.shipping_name} ${customer.shipping_surname}<br>
+            INDIRIZZO: ${customer.shipping_street}, ${customer.shipping_city} (${customer.shipping_postcode})<br>
+            METODO PAGAMENTO: ${customer.payment_method}
+        </div>
+
+        <p style="margin-top: 20px;"><strong>MANIFESTO ASSET:</strong></p>
+        <ul style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #b3904a; list-style-type: square;">
+            ${listaProdottiMail}
+        </ul>
+
+        <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 20px 0;">
+        <p style="font-size: 12px; color: #817f7f;">Fattura Generata: ${invoiceNumber}</p>
+    </div>`
             };
+
+
+
+
 
             await transporter.sendMail(mailOptionsCliente);
             console.log("Mail CLIENTE inviata.");
