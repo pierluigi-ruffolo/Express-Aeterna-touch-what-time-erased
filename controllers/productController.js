@@ -203,7 +203,6 @@ function showProducts(req, res, next) {
 
 /* store */
 function storeProducts(req, res, next) {
-
   const { customer, cart, billing } = req.body;
 
   if (
@@ -263,8 +262,6 @@ function storeProducts(req, res, next) {
     return /^\d{5}$/.test(cap);
   }
 
-
-
   //name
   if (notValidInput(customer.shipping_name) || notValidInput(billing.name)) {
     return res.status(400).json({
@@ -285,12 +282,15 @@ function storeProducts(req, res, next) {
   }
   // CAP
 
-  if (!isValidCAP(customer.shipping_postcode) || !isValidCAP(billing.postcode)) {
+  if (
+    !isValidCAP(customer.shipping_postcode) ||
+    !isValidCAP(billing.postcode)
+  ) {
     return res.status(400).json({
-      message: "ERROR 400 - Il CAP deve contenere esattamente 5 numeri e non deve essere negativo."
+      message:
+        "ERROR 400 - Il CAP deve contenere esattamente 5 numeri e non deve essere negativo.",
     });
   }
-
 
   //city
   if (notValidInput(customer.shipping_city) || notValidInput(billing.city)) {
@@ -440,8 +440,6 @@ function storeProducts(req, res, next) {
             donazione_onlus: Number(donazioneOnlus),
           });
           try {
-
-
             const mailOptionsCliente = {
               from: '"Aeterna 🤖" <aeterna8@ethereal.email>',
               to: customer.email,
@@ -472,7 +470,7 @@ function storeProducts(req, res, next) {
             <table style="width: 100%; font-family: 'Anta', sans-serif; color: #3a3a3a;">
                 <tr>
                     <td style="padding: 5px 0;">Spedizione:</td>
-                    <td style="text-align: right;">${costoSpedizione === 0 ? 'Gratis' : costoSpedizione.toFixed(2) + '€'}</td>
+                    <td style="text-align: right;">${costoSpedizione === 0 ? "Gratis" : costoSpedizione.toFixed(2) + "€"}</td>
                 </tr>
                 <tr style="font-size: 20px; font-weight: bold;">
                     <td style="padding-top: 15px; color: #3a3a3a;">TOTALE:</td>
@@ -490,7 +488,7 @@ function storeProducts(req, res, next) {
                 <p class="anta-font">AETERNA | BIO-INGEGNERIA | 2026</p>
             </div>
         </div>
-    </div>`
+    </div>`,
             };
 
             const mailOptionsVenditore = {
@@ -515,12 +513,8 @@ function storeProducts(req, res, next) {
 
         <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 20px 0;">
         <p style="font-size: 12px; color: #817f7f;">Fattura Generata: ${invoiceNumber}</p>
-    </div>`
+    </div>`,
             };
-
-
-
-
 
             await transporter.sendMail(mailOptionsCliente);
             console.log("Mail CLIENTE inviata.");
@@ -569,7 +563,7 @@ L'estinzione è un ricordo del passato: cloniamo ogni specie nel catalogo tramit
 3. NO SALUTI: L'utente ha già ricevuto il messaggio di benvenuto. NON salutare (no "Ciao", "Benvenuto", "Buongiorno") e non presentarti. Vai dritto al punto della richiesta.
 4. BRANDING: Se devi citare l'azienda, usa solo "Aeterna". Mai "Aeterna Dynamics".
 5. REALTÀ ESTERNE: È vietato citare Amazon, Etsy o altri competitor.
-
+6. quando dai il prezzo di un prodotto usa sempre la valuta in euro.
 ### STRUTTURA JSON RICHIESTA:
 {
   "testo_risposta": "Il tuo messaggio di vendita o assistenza senza saluti iniziali"
