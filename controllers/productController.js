@@ -484,6 +484,12 @@ function storeProducts(req, res, next) {
                 </div>
             </div>
 
+            <div style="margin-top: 35px; padding: 15px; background-color: rgba(69, 194, 216, 0.1); border-radius: 10px; border: 1px dashed rgba(69, 194, 216, 0.6); text-align: center;">
+                <p style="margin: 0; font-family: 'Anta', sans-serif; color: #3a3a3a; font-size: 13px;">
+                    🌱 <strong style="color: #b3904a;">IMPATTO POSITIVO:</strong> Aeterna ha devoluto il 20% di questo acquisto (<strong style="color: #b3904a;">${donazioneOnlus}€</strong>) alla protezione delle specie a rischio.
+                </p>
+            </div>
+
             <div style="text-align: center; margin-top: 40px; color: #817f7f; font-size: 11px;">
                 <p class="anta-font">AETERNA | BIO-INGEGNERIA | 2026</p>
             </div>
